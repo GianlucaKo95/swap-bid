@@ -12,7 +12,11 @@ interface AuthContextValue {
   user: User | null
   profile: Profile | null
   loading: boolean
-  signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<{ error: string | null; session: Session | null }>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
@@ -51,12 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session?.user])
 
   async function signUp(email: string, password: string, displayName: string) {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { display_name: displayName } },
     })
-    return { error: error?.message ?? null }
+    // With email confirmation disabled, signUp returns an active session
+    // immediately instead of requiring a confirmation click first.
+    return { error: error?.message ?? null, session: data.session }
   }
 
   async function signIn(email: string, password: string) {
