@@ -12,7 +12,9 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [minAmount, setMinAmount] = useState('')
   const [maxAmount, setMaxAmount] = useState('')
+  const [location, setLocation] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -37,10 +39,12 @@ export default function HomePage() {
     return listings.filter((l) => {
       if (search && !l.title.toLowerCase().includes(search.toLowerCase())) return false
       if (category && l.category !== category) return false
+      if (minAmount && l.amount < Number(minAmount)) return false
       if (maxAmount && l.amount > Number(maxAmount)) return false
+      if (location && !l.location.toLowerCase().includes(location.toLowerCase())) return false
       return true
     })
-  }, [listings, search, category, maxAmount])
+  }, [listings, search, category, minAmount, maxAmount, location])
 
   return (
     <div>
@@ -51,7 +55,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <input
           type="text"
           placeholder="Suche nach Titel…"
@@ -71,6 +75,21 @@ export default function HomePage() {
             </option>
           ))}
         </select>
+        <input
+          type="text"
+          placeholder="Umgebung (z. B. Berlin)"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="border rounded-md px-3 py-2 text-sm"
+        />
+        <input
+          type="number"
+          min="0"
+          placeholder="Min. Betrag (€)"
+          value={minAmount}
+          onChange={(e) => setMinAmount(e.target.value)}
+          className="border rounded-md px-3 py-2 text-sm"
+        />
         <input
           type="number"
           min="0"

@@ -22,13 +22,14 @@
    cp .env.example .env
    ```
 
-3. Datenbankschema anlegen: Öffne im Supabase-Dashboard den **SQL Editor** und führe **beide** Migrationen der Reihe nach aus:
+3. Datenbankschema anlegen: Öffne im Supabase-Dashboard den **SQL Editor** und führe **alle drei** Migrationen der Reihe nach aus:
 
    - [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) legt folgende Tabellen inkl. Row-Level-Security-Policies an:
      - `profiles` – Anzeigename pro Nutzer:in (wird automatisch bei der Registrierung angelegt)
      - `listings` – Gesuche ("Ich habe 20€ übrig")
      - `offers` – Angebote auf ein Gesuch ("Dafür biete ich dir Objekt XYZ")
    - [`supabase/migrations/0002_offer_images.sql`](./supabase/migrations/0002_offer_images.sql) ergänzt `offers.image_urls` sowie den öffentlichen Storage-Bucket `offer-images`, damit Angebote Fotos des Objekts enthalten können.
+   - [`supabase/migrations/0003_location_and_ratings.sql`](./supabase/migrations/0003_location_and_ratings.sql) ergänzt `listings.location` (für die Umgebungssuche) sowie die Tabelle `ratings`: Nachdem ein Gesuch vergeben wurde, können sich Anbieter:in und Gesuchsteller:in gegenseitig einmal bewerten (1–5 Sterne + Kommentar).
 
 4. In den Supabase Auth-Einstellungen (Authentication → Providers → Email) kannst du die Pflicht zur E-Mail-Bestätigung nach Bedarf aktivieren/deaktivieren.
 

@@ -11,6 +11,7 @@ export default function NewListingPage() {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<string>(CATEGORIES[0].value)
+  const [location, setLocation] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -28,6 +29,7 @@ export default function NewListingPage() {
         description,
         amount: Number(amount),
         category,
+        location,
       })
       .select('id')
       .single()
@@ -79,6 +81,15 @@ export default function NewListingPage() {
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Umgebung (optional)</label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="z. B. 10115 Berlin"
+            className="w-full border rounded-md px-3 py-2"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Beschreibung</label>
