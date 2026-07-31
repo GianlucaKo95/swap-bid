@@ -1,5 +1,5 @@
 name: SwapBid
-version: "0.2.0"
+version: "0.2.1"
 slug: swap_bid
 description: Umgekehrter Kleinanzeigenmarkt – Geld posten, andere bieten Objekte dafür
 url: "https://github.com/GianlucaKo95/swap-bid"
@@ -20,5 +20,5 @@ options:
   supabase_url: ""
   supabase_anon_key: ""
 schema:
-  supabase_url: str
+  supabase_url: url
   supabase_anon_key: str
