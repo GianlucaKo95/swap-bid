@@ -4,7 +4,7 @@ services:
     image: swap-bid:latest
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "3045:3045"
     environment:
       # Reuses the same .env used for local `npm run dev` (see .env.example).
       SUPABASE_URL: ${VITE_SUPABASE_URL:?Bitte VITE_SUPABASE_URL in .env setzen}

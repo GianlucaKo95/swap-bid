@@ -21,13 +21,13 @@ Wird `version` in `config.yaml` erhöht, muss der Workflow (durch einen Push auf
 docker build -t swap-bid .
 docker run -d \
   --name swap-bid \
-  -p 8080:8080 \
+  -p 3045:3045 \
   -e SUPABASE_URL="https://dein-projekt.supabase.co" \
   -e SUPABASE_ANON_KEY="dein-anon-key" \
   swap-bid
 ```
 
-App danach unter `http://<host>:8080` erreichbar.
+App danach unter `http://<host>:3045` erreichbar.
 
 Alternativ, ohne lokalen Build, das von CI gebaute Image direkt verwenden: `docker run ... ghcr.io/gianlucako95/swap-bid:latest` (Rest wie oben).
 
@@ -48,17 +48,17 @@ Dieses Repository ist gleichzeitig ein (einzelnes) Home-Assistant-Add-on-Reposit
 2. Oben rechts ⋮ → **Repositories** → URL des Repos einfügen (`https://github.com/GianlucaKo95/swap-bid`) → **Hinzufügen**
 3. Store neu laden, dann **SwapBid** unter den lokalen Add-ons öffnen → **Installieren** (lädt das von GitHub Actions gebaute Image von `ghcr.io/gianlucako95/swap-bid` – kein lokaler Build auf dem HA-Host nötig)
 4. Im Tab **Konfiguration**: `supabase_url` und `supabase_anon_key` eintragen, **Speichern**
-5. Add-on **Starten**. Über den Button **WEBOBERFLÄCHE ÖFFNEN** bzw. `http://<home-assistant-host>:8080` ist SwapBid erreichbar.
+5. Add-on **Starten**. Über den Button **WEBOBERFLÄCHE ÖFFNEN** bzw. `http://<home-assistant-host>:3045` ist SwapBid erreichbar.
 
-Port `8080` kann im Tab **Netzwerk** des Add-ons bei Bedarf auf einen anderen Host-Port gemappt werden (z. B. falls schon belegt).
+Port `3045` kann im Tab **Netzwerk** des Add-ons bei Bedarf auf einen anderen Host-Port gemappt werden (z. B. falls schon belegt).
 
 ## 4. Zugriff von außen über dynDNS
 
 1. **DDNS einrichten**: z. B. das offizielle *DuckDNS*-Add-on in Home Assistant, oder einen DDNS-Client auf deinem Router, der eure öffentliche IP unter eurer Wunsch-Domain (`deinname.duckdns.org` o. ä.) aktuell hält.
-2. **Portweiterleitung** im Router: externen Port (z. B. 8080, oder frei wählbar) auf die interne IP des HA-Hosts und Port 8080 (bzw. den im Add-on gewählten Port) weiterleiten.
+2. **Portweiterleitung** im Router: externen Port (z. B. 3045, oder frei wählbar) auf die interne IP des HA-Hosts und Port 3045 (bzw. den im Add-on gewählten Port) weiterleiten.
 3. **HTTPS nicht vergessen**: SwapBid selbst spricht nur HTTP. Zugangsdaten (Login) unverschlüsselt über das offene Internet zu schicken ist unsicher. Setze einen Reverse Proxy mit TLS davor, z. B.:
    - Das offizielle **Let's Encrypt**-Add-on plus eigener nginx-Konfiguration, oder
-   - Community Add-ons wie **NGINX Proxy Manager** / **Caddy**, die euer DDNS-Zertifikat automatisch verwalten und dann intern auf `swap-bid:8080` weiterleiten.
+   - Community Add-ons wie **NGINX Proxy Manager** / **Caddy**, die euer DDNS-Zertifikat automatisch verwalten und dann intern auf `swap-bid:3045` weiterleiten.
    Nur den TLS-Port (443) extern freigeben, den SwapBid-Port selbst nicht direkt exponieren.
 4. Danach ist die App unter `https://deinname.duckdns.org` (oder eurer eigenen Domain) erreichbar.
 
