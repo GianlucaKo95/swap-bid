@@ -1,5 +1,5 @@
 name: SwapBid
-version: "0.1.0"
+version: "0.2.0"
 slug: swap_bid
 description: Umgekehrter Kleinanzeigenmarkt – Geld posten, andere bieten Objekte dafür
 url: "https://github.com/GianlucaKo95/swap-bid"
@@ -12,10 +12,10 @@ init: false
 startup: application
 boot: auto
 ports:
-  8080/tcp: 8080
+  3045/tcp: 3045
 ports_description:
-  8080/tcp: SwapBid Web-UI
-webui: "http://[HOST]:[PORT:8080]"
+  3045/tcp: SwapBid Web-UI
+webui: "http://[HOST]:[PORT:3045]"
 options:
   supabase_url: ""
   supabase_anon_key: ""
