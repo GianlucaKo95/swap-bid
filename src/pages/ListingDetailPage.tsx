@@ -193,7 +193,7 @@ export default function ListingDetailPage() {
     let imageUrls: string[] = []
     try {
       if (offerFiles.length > 0) {
-        imageUrls = await uploadOfferImages(user.id, offerFiles)
+        imageUrls = await uploadOfferImages(offerFiles)
       }
     } catch (err) {
       setOfferSubmitting(false)

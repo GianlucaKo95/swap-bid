@@ -101,6 +101,37 @@ Tab **SSL**: **Request a new SSL Certificate** (Let's Encrypt) → **Force SSL**
 
 **5. Testen**: `https://deinname.duckdns.org` sollte SwapBid mit gültigem Zertifikat anzeigen (Schloss-Symbol im Browser, keine Warnung).
 
+## 6. Edge Function für die Bild-Moderation deployen
+
+Angebotsfotos werden serverseitig geprüft (Sightengine), damit die Prüfung nicht über direkte API-Aufrufe umgangen werden kann (siehe `README.md` → Moderation). Dafür muss die Edge Function `moderate-offer-image` einmalig deployt werden – das geht nicht über den SQL-Editor, sondern nur über die Supabase CLI:
+
+1. **Bei Sightengine registrieren**: kostenlos auf [sightengine.com](https://sightengine.com) (Free-Tier reicht für ein privates Projekt) → im Dashboard **API User** und **API Secret** kopieren.
+
+2. **Supabase CLI installieren und einloggen** (falls noch nicht vorhanden):
+   ```bash
+   npm install -g supabase
+   supabase login
+   ```
+
+3. **Projekt verknüpfen** (Projekt-Ref steht in der Supabase-Projekt-URL, z. B. `pczqnzdnqphmcwygxfpc`):
+   ```bash
+   supabase link --project-ref <dein-projekt-ref>
+   ```
+
+4. **Secrets setzen** (nur diese beiden – `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` stellt die Plattform der Function automatisch bereit):
+   ```bash
+   supabase secrets set SIGHTENGINE_API_USER=dein-api-user SIGHTENGINE_API_SECRET=dein-api-secret
+   ```
+
+5. **Function deployen**:
+   ```bash
+   supabase functions deploy moderate-offer-image
+   ```
+
+6. **Migration ausführen**: `supabase/migrations/0005_lock_down_offer_image_uploads.sql` im SQL-Editor laufen lassen – das entzieht dem Client die direkte Schreibberechtigung auf den `offer-images`-Bucket, sodass Uploads nur noch über die (jetzt geprüfte) Function möglich sind.
+
+Ohne diese Schritte schlägt das Hochladen von Angebotsfotos fehl (die Function existiert dann nicht), die restliche App funktioniert aber weiterhin normal.
+
 ## Supabase-Setup
 
 Nicht vergessen: Vor dem ersten Start muss `supabase/migrations/0001_init.sql` einmal im SQL-Editor des Supabase-Projekts ausgeführt werden (siehe `README.md`).

@@ -22,7 +22,7 @@
    cp .env.example .env
    ```
 
-3. Datenbankschema anlegen: Öffne im Supabase-Dashboard den **SQL Editor** und führe **alle drei** Migrationen der Reihe nach aus:
+3. Datenbankschema anlegen: Öffne im Supabase-Dashboard den **SQL Editor** und führe **alle Migrationen** der Reihe nach aus:
 
    - [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) legt folgende Tabellen inkl. Row-Level-Security-Policies an:
      - `profiles` – Anzeigename pro Nutzer:in (wird automatisch bei der Registrierung angelegt)
@@ -31,6 +31,7 @@
    - [`supabase/migrations/0002_offer_images.sql`](./supabase/migrations/0002_offer_images.sql) ergänzt `offers.image_urls` sowie den öffentlichen Storage-Bucket `offer-images`, damit Angebote Fotos des Objekts enthalten können.
    - [`supabase/migrations/0003_location_and_ratings.sql`](./supabase/migrations/0003_location_and_ratings.sql) ergänzt `listings.location`/`lat`/`lng` (Postleitzahl wird beim Erstellen eines Gesuchs über [Zippopotam.us](https://api.zippopotam.us) geokodiert, damit andere Nutzer:innen per Umkreissuche filtern können) sowie die Tabelle `ratings`: Nachdem ein Gesuch vergeben wurde, können sich Anbieter:in und Gesuchsteller:in gegenseitig einmal bewerten (1–5 Sterne + Kommentar).
    - [`supabase/migrations/0004_moderation.sql`](./supabase/migrations/0004_moderation.sql) legt eine `reports`-Tabelle (Melde-Funktion) sowie einen serverseitigen Stichwortfilter an, der Gesuche/Angebote mit offensichtlich verbotenen Inhalten (u. a. sexuelle Dienstleistungen, Menschenhandel, Waffen, Drogen) blockiert. Siehe Abschnitt [Moderation](#moderation) unten.
+   - [`supabase/migrations/0005_lock_down_offer_image_uploads.sql`](./supabase/migrations/0005_lock_down_offer_image_uploads.sql) entzieht dem Client die direkte Schreibberechtigung auf den `offer-images`-Bucket. **Erst ausführen, nachdem** die Edge Function `moderate-offer-image` deployt ist (siehe `DEPLOYMENT.md` → Abschnitt 6) – sonst schlägt jeder Foto-Upload fehl.
 
 4. In den Supabase Auth-Einstellungen (Authentication → Providers → Email) kannst du die Pflicht zur E-Mail-Bestätigung nach Bedarf aktivieren/deaktivieren.
 
@@ -59,7 +60,9 @@ SwapBid hat **kein** Admin-Panel – als Betreiber:in moderierst du direkt über
   insert into public.blocked_emoji (emoji) values ('🍌');
   ```
   Ein Wortfilter erkennt nur offensichtliche/unverschleierte Verstöße – er ist **kein** verlässlicher Schutz gegen gezielte Umgehung.
-- **Bild-Check vor dem Hochladen** (Angebotsfotos): Ein clientseitiges TensorFlow.js-Modell ([nsfwjs](https://github.com/infinitered/nsfwjs), MobileNetV2) klassifiziert jedes Foto im Browser, bevor es hochgeladen wird, und lehnt eindeutig als „Porn“/„Hentai“/„Sexy“ eingestufte Bilder ab. Läuft komplett lokal im Browser (kein Upload zur Prüfung nötig), wird aber erst beim ersten Foto-Upload nachgeladen (~2–3 MB, danach vom Browser gecacht). Da die Prüfung im Client läuft, ist sie – anders als der Stichwortfilter in der Datenbank – theoretisch über direkte API-Aufrufe umgehbar; in Kombination mit der Melde-Funktion trotzdem eine sinnvolle Hürde.
+- **Bild-Check vor dem Hochladen** (Angebotsfotos), zweistufig:
+  1. Clientseitig: Ein TensorFlow.js-Modell ([nsfwjs](https://github.com/infinitered/nsfwjs), MobileNetV2) klassifiziert jedes Foto direkt im Browser und lehnt eindeutig als „Porn“/„Hentai“/„Sexy“ eingestufte Bilder sofort ab, ohne dass erst hochgeladen werden muss. Wird beim ersten Foto-Upload nachgeladen (~2–3 MB, danach vom Browser gecacht). Für sich allein wäre das umgehbar (direkter API-Aufruf statt Browser).
+  2. Serverseitig, verbindlich: Uploads laufen ausschließlich über die Edge Function `moderate-offer-image`, die das Foto zusätzlich über [Sightengine](https://sightengine.com) prüft, bevor es überhaupt gespeichert wird. Der `offer-images`-Storage-Bucket erlaubt seit `0005_lock_down_offer_image_uploads.sql` **keinen** direkten Schreibzugriff mehr für Clients – nur die Function selbst (mit Service-Role-Key) darf schreiben. Damit ist Schritt 1 nicht mehr die einzige Hürde, sondern nur noch schnelles Feedback; die eigentliche Durchsetzung passiert serverseitig und ist nicht umgehbar. Einrichtung/Deploy der Function siehe `DEPLOYMENT.md`.
 - **Melde-Funktion**: Jedes Gesuch und Angebot hat einen „🚩 Melden“-Button. Gemeldete Inhalte landen in der Tabelle `reports`. Regelmäßig prüfen, z. B. im SQL Editor:
   ```sql
   select * from reports order by created_at desc;
