@@ -1,5 +1,6 @@
 export type ListingStatus = 'open' | 'matched' | 'closed'
 export type OfferStatus = 'pending' | 'accepted' | 'rejected'
+export type ReportTargetType = 'listing' | 'offer'
 
 export interface Database {
   public: {
@@ -161,6 +162,43 @@ export interface Database {
           {
             foreignKeyName: 'ratings_ratee_id_fkey'
             columns: ['ratee_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          target_type: ReportTargetType
+          target_id: string
+          reason: string
+          comment: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reporter_id: string
+          target_type: ReportTargetType
+          target_id: string
+          reason: string
+          comment?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          target_type?: ReportTargetType
+          target_id?: string
+          reason?: string
+          comment?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'reports_reporter_id_fkey'
+            columns: ['reporter_id']
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },

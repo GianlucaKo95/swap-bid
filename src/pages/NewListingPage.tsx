@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../lib/categories'
@@ -13,6 +13,7 @@ export default function NewListingPage() {
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<string>(CATEGORIES[0].value)
   const [postalCode, setPostalCode] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -126,10 +127,26 @@ export default function NewListingPage() {
             className="w-full border rounded-md px-3 py-2"
           />
         </div>
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input
+            required
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            Ich bestätige, dass mein Gesuch keine verbotenen Inhalte enthält (siehe{' '}
+            <Link to="/nutzungsbedingungen" target="_blank" className="text-brand-700 hover:underline">
+              Nutzungsbedingungen
+            </Link>
+            ).
+          </span>
+        </label>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !acceptedTerms}
           className="bg-brand-600 text-white px-4 py-2 rounded-md font-medium hover:bg-brand-700 disabled:opacity-50"
         >
           {submitting ? 'Wird veröffentlicht…' : 'Gesuch veröffentlichen'}

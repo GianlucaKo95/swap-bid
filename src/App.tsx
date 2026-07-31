@@ -8,6 +8,7 @@ import MyListingsPage from './pages/MyListingsPage'
 import MyOffersPage from './pages/MyOffersPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import AcceptableUsePage from './pages/AcceptableUsePage'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="gesuche/:id" element={<ListingDetailPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="registrieren" element={<RegisterPage />} />
+        <Route path="nutzungsbedingungen" element={<AcceptableUsePage />} />
         <Route
           path="neu"
           element={

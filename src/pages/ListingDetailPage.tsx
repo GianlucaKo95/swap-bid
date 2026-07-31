@@ -7,6 +7,7 @@ import { MAX_OFFER_IMAGES, MAX_OFFER_IMAGE_SIZE, uploadOfferImages } from '../li
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import UserRatingBadge from '../components/UserRatingBadge'
+import ReportButton from '../components/ReportButton'
 
 interface ListingWithOwner {
   id: string
@@ -57,6 +58,7 @@ export default function ListingDetailPage() {
   const [offerDescription, setOfferDescription] = useState('')
   const [offerFiles, setOfferFiles] = useState<File[]>([])
   const [offerPreviews, setOfferPreviews] = useState<string[]>([])
+  const [offerAcceptedTerms, setOfferAcceptedTerms] = useState(false)
   const [offerSubmitting, setOfferSubmitting] = useState(false)
   const [offerError, setOfferError] = useState<string | null>(null)
 
@@ -186,6 +188,7 @@ export default function ListingDetailPage() {
     setOfferTitle('')
     setOfferDescription('')
     setOfferFiles([])
+    setOfferAcceptedTerms(false)
     await loadData()
   }
 
@@ -279,6 +282,9 @@ export default function ListingDetailPage() {
           <UserRatingBadge summary={ratingSummaries[listing.user_id]} />
         </div>
         {listing.description && <p className="mt-4 text-gray-700 whitespace-pre-wrap">{listing.description}</p>}
+        <div className="mt-3">
+          <ReportButton targetType="listing" targetId={listing.id} />
+        </div>
       </div>
 
       <div className="mt-8">
@@ -308,6 +314,9 @@ export default function ListingDetailPage() {
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-xs text-gray-400">von {offer.profiles?.display_name ?? 'Unbekannt'}</span>
                 <UserRatingBadge summary={ratingSummaries[offer.user_id]} />
+              </div>
+              <div className="mt-2">
+                <ReportButton targetType="offer" targetId={offer.id} />
               </div>
 
               {isOwner && listing.status === 'open' && offer.status === 'pending' && (
@@ -384,10 +393,26 @@ export default function ListingDetailPage() {
                 </div>
               )}
             </div>
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+              <input
+                required
+                type="checkbox"
+                checked={offerAcceptedTerms}
+                onChange={(e) => setOfferAcceptedTerms(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Ich bestätige, dass mein Angebot keine verbotenen Inhalte enthält (siehe{' '}
+                <Link to="/nutzungsbedingungen" target="_blank" className="text-brand-700 hover:underline">
+                  Nutzungsbedingungen
+                </Link>
+                ).
+              </span>
+            </label>
             {offerError && <p className="text-red-600 text-sm">{offerError}</p>}
             <button
               type="submit"
-              disabled={offerSubmitting}
+              disabled={offerSubmitting || !offerAcceptedTerms}
               className="bg-brand-600 text-white px-4 py-2 rounded-md font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               {offerSubmitting ? 'Wird gesendet…' : 'Angebot senden'}
