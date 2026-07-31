@@ -1,0 +1,11 @@
+services:
+  swap-bid:
+    build: .
+    image: swap-bid:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Reuses the same .env used for local `npm run dev` (see .env.example).
+      SUPABASE_URL: ${VITE_SUPABASE_URL:?Bitte VITE_SUPABASE_URL in .env setzen}
+      SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Bitte VITE_SUPABASE_ANON_KEY in .env setzen}

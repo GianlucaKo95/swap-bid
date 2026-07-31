@@ -48,3 +48,7 @@
 ```bash
 npm run build
 ```
+
+## Deployment (Docker / Home Assistant Add-on)
+
+Für Docker, Docker Compose, Betrieb als Home Assistant Add-on und Zugriff von außen über dynDNS siehe [`DEPLOYMENT.md`](./DEPLOYMENT.md).
