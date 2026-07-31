@@ -3,6 +3,7 @@ version: "0.1.0"
 slug: swap_bid
 description: Umgekehrter Kleinanzeigenmarkt – Geld posten, andere bieten Objekte dafür
 url: "https://github.com/GianlucaKo95/swap-bid"
+image: "ghcr.io/gianlucako95/swap-bid"
 arch:
   - amd64
   - aarch64

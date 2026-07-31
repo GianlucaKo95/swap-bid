@@ -2,6 +2,19 @@
 
 SwapBid ist eine statische Single-Page-App (Vite/React), die direkt mit deinem Supabase-Projekt spricht. Es gibt keinen eigenen Server-Prozess – der Docker-Container liefert nur die gebauten Dateien per nginx aus. Die Supabase-Zugangsdaten werden **nicht** ins Image gebaut, sondern beim Containerstart per `docker-entrypoint.sh` in `env-config.js` geschrieben. Dadurch reicht ein einziges Image für Docker, Docker Compose und das Home Assistant Add-on.
 
+## 0. CI: automatischer Image-Build (`.github/workflows/docker-build-push.yml`)
+
+Bei jedem Push/PR baut GitHub Actions das Docker-Image für `linux/amd64`, `linux/arm64` und `linux/arm/v7` (verifiziert, dass das Dockerfile für alle Zielarchitekturen baut). Bei einem Push auf `main` wird das Multi-Arch-Image zusätzlich nach GitHub Container Registry gepusht, getaggt als `ghcr.io/gianlucako95/swap-bid:latest` und `:<version aus config.yaml>`. Das Home Assistant Add-on (siehe unten) zieht dieses fertige Image, statt es bei jeder Installation auf dem HA-Host selbst zu bauen.
+
+**Einmaliger manueller Schritt nach dem ersten erfolgreichen Workflow-Lauf:** GitHub veröffentlicht neue Packages standardmäßig **privat**, auch in einem öffentlichen Repo. Damit dein HA-Host das Image ohne Login ziehen kann:
+
+1. GitHub → dein Profil → **Packages** → `swap-bid` öffnen
+2. **Package settings** → **Change visibility** → **Public**
+
+Ohne diesen Schritt schlägt der Image-Pull auf dem HA-Host mit einem Auth-Fehler fehl.
+
+Wird `version` in `config.yaml` erhöht, muss der Workflow (durch einen Push auf `main`) einmal durchlaufen, bevor die neue Version im Add-on installierbar ist – sonst existiert der entsprechende Image-Tag in der Registry noch nicht.
+
 ## 1. Plain Docker
 
 ```bash
@@ -15,6 +28,8 @@ docker run -d \
 ```
 
 App danach unter `http://<host>:8080` erreichbar.
+
+Alternativ, ohne lokalen Build, das von CI gebaute Image direkt verwenden: `docker run ... ghcr.io/gianlucako95/swap-bid:latest` (Rest wie oben).
 
 ## 2. Docker Compose
 
@@ -31,7 +46,7 @@ Dieses Repository ist gleichzeitig ein (einzelnes) Home-Assistant-Add-on-Reposit
 
 1. In Home Assistant: **Einstellungen → Add-ons → Add-on Store**
 2. Oben rechts ⋮ → **Repositories** → URL des Repos einfügen (`https://github.com/GianlucaKo95/swap-bid`) → **Hinzufügen**
-3. Store neu laden, dann **SwapBid** unter den lokalen Add-ons öffnen → **Installieren** (baut das Image direkt auf dem HA-Host)
+3. Store neu laden, dann **SwapBid** unter den lokalen Add-ons öffnen → **Installieren** (lädt das von GitHub Actions gebaute Image von `ghcr.io/gianlucako95/swap-bid` – kein lokaler Build auf dem HA-Host nötig)
 4. Im Tab **Konfiguration**: `supabase_url` und `supabase_anon_key` eintragen, **Speichern**
 5. Add-on **Starten**. Über den Button **WEBOBERFLÄCHE ÖFFNEN** bzw. `http://<home-assistant-host>:8080` ist SwapBid erreichbar.
 
