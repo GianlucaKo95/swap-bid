@@ -54,6 +54,10 @@ SwapBid hat **kein** Admin-Panel – als Betreiber:in moderierst du direkt über
   ```sql
   insert into public.blocked_terms (term) values ('zusätzlicher-begriff');
   ```
+  Zusätzlich gibt es eine Emoji-Kombinations-Erkennung (`blocked_emoji`): Tauchen mindestens zwei als eindeutig sexuell konnotiert eingestufte Emoji (🍆 👅 🍑 💦) irgendwo im selben Text auf, wird der Inhalt ebenfalls abgelehnt – bewusst nicht bei einem einzelnen Emoji, da z. B. 🍆 auch harmlos in einem Kochkontext vorkommen kann. Weitere Emoji ergänzen:
+  ```sql
+  insert into public.blocked_emoji (emoji) values ('🍌');
+  ```
   Ein Wortfilter erkennt nur offensichtliche/unverschleierte Verstöße – er ist **kein** verlässlicher Schutz gegen gezielte Umgehung.
 - **Melde-Funktion**: Jedes Gesuch und Angebot hat einen „🚩 Melden“-Button. Gemeldete Inhalte landen in der Tabelle `reports`. Regelmäßig prüfen, z. B. im SQL Editor:
   ```sql

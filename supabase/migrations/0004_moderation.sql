@@ -40,6 +40,7 @@ revoke all on public.blocked_terms from anon, authenticated;
 
 insert into public.blocked_terms (term) values
   ('sex'), ('porn'), ('pornographie'), ('escort'), ('prostitution'), ('erotik'),
+  ('blowjob'), ('handjob'), ('blowi'),
   ('menschenhandel'), ('sklave'), ('sklavin'), ('zwangsarbeit'), ('ausbeutung'),
   ('minderjährig'), ('kinderporno'),
   ('waffe'), ('schusswaffe'), ('munition'),
@@ -60,12 +61,43 @@ as $$
   );
 $$;
 
+-- Emoji combos used as sexual innuendo (e.g. eggplant + tongue) are checked
+-- separately: any single one of these is common in innocent contexts
+-- (cooking, food posts), so only flag when at least two distinct ones show
+-- up anywhere in the same text — not necessarily adjacent, since spacing
+-- them out is a trivial evasion of a plain substring match.
+create table if not exists public.blocked_emoji (
+  emoji text primary key
+);
+
+revoke all on public.blocked_emoji from anon, authenticated;
+
+insert into public.blocked_emoji (emoji) values
+  ('🍆'), ('👅'), ('🍑'), ('💦')
+on conflict (emoji) do nothing;
+
+create or replace function public.contains_blocked_emoji_combo(input text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select count(*) >= 2
+  from public.blocked_emoji
+  where position(emoji in input) > 0;
+$$;
+
 create or replace function public.check_listing_content()
 returns trigger
 language plpgsql
 as $$
 begin
-  if public.contains_blocked_term(new.title) or public.contains_blocked_term(new.description) then
+  if public.contains_blocked_term(new.title)
+    or public.contains_blocked_term(new.description)
+    or public.contains_blocked_emoji_combo(new.title)
+    or public.contains_blocked_emoji_combo(new.description)
+  then
     raise exception 'Dieser Inhalt verstößt gegen die Nutzungsbedingungen von SwapBid.';
   end if;
   return new;
@@ -82,7 +114,11 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if public.contains_blocked_term(new.title) or public.contains_blocked_term(new.description) then
+  if public.contains_blocked_term(new.title)
+    or public.contains_blocked_term(new.description)
+    or public.contains_blocked_emoji_combo(new.title)
+    or public.contains_blocked_emoji_combo(new.description)
+  then
     raise exception 'Dieser Inhalt verstößt gegen die Nutzungsbedingungen von SwapBid.';
   end if;
   return new;
