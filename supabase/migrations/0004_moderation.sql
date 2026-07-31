@@ -45,7 +45,14 @@ insert into public.blocked_terms (term) values
   ('minderjährig'), ('kinderporno'),
   ('waffe'), ('schusswaffe'), ('munition'),
   ('drogen'), ('kokain'), ('heroin'), ('crystal meth'), ('betäubungsmittel'),
-  ('falschgeld'), ('gestohlen')
+  ('falschgeld'), ('gestohlen'),
+  -- Service-offering language: SwapBid has no "Dienstleistung" category
+  -- (removed — it couldn't be distinguished from sexual-service solicitation
+  -- by keyword alone), so any wording that offers a personal service is
+  -- blocked outright rather than just specific euphemisms.
+  ('dienste an'), ('meine dienste'), ('biete dienste'), ('dienstleistung'),
+  ('diskrete dienste'), ('vollservice'), ('happy end'), ('besondere dienstleistung'),
+  ('sinnliche massage')
 on conflict (term) do nothing;
 
 create or replace function public.contains_blocked_term(input text)

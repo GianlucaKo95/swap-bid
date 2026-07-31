@@ -4,7 +4,6 @@ export const CATEGORIES = [
   { value: 'kleidung', label: 'Kleidung' },
   { value: 'haushalt', label: 'Haushalt' },
   { value: 'freizeit', label: 'Freizeit & Hobby' },
-  { value: 'dienstleistung', label: 'Dienstleistung' },
   { value: 'sonstiges', label: 'Sonstiges' },
 ] as const
 

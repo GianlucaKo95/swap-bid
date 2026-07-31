@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { categoryLabel } from '../lib/categories'
 import { MAX_OFFER_IMAGES, MAX_OFFER_IMAGE_SIZE, uploadOfferImages } from '../lib/offerImages'
+import { isImageSafe } from '../lib/nsfwCheck'
 import StatusBadge from '../components/StatusBadge'
 import StarRating from '../components/StarRating'
 import UserRatingBadge from '../components/UserRatingBadge'
@@ -59,6 +60,7 @@ export default function ListingDetailPage() {
   const [offerFiles, setOfferFiles] = useState<File[]>([])
   const [offerPreviews, setOfferPreviews] = useState<string[]>([])
   const [offerAcceptedTerms, setOfferAcceptedTerms] = useState(false)
+  const [checkingImages, setCheckingImages] = useState(false)
   const [offerSubmitting, setOfferSubmitting] = useState(false)
   const [offerError, setOfferError] = useState<string | null>(null)
 
@@ -137,9 +139,10 @@ export default function ListingDetailPage() {
     return () => previews.forEach((url) => URL.revokeObjectURL(url))
   }, [offerFiles])
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? [])
     e.target.value = '' // allow re-selecting the same file after removing it
+    if (selected.length === 0) return
 
     const oversized = selected.find((file) => file.size > MAX_OFFER_IMAGE_SIZE)
     if (oversized) {
@@ -148,7 +151,33 @@ export default function ListingDetailPage() {
     }
 
     setOfferError(null)
-    setOfferFiles((files) => [...files, ...selected].slice(0, MAX_OFFER_IMAGES))
+    setCheckingImages(true)
+
+    const safeFiles: File[] = []
+    const rejectedNames: string[] = []
+    let checkFailed = false
+    for (const file of selected) {
+      try {
+        if (await isImageSafe(file)) {
+          safeFiles.push(file)
+        } else {
+          rejectedNames.push(file.name)
+        }
+      } catch {
+        checkFailed = true
+      }
+    }
+
+    setCheckingImages(false)
+
+    if (checkFailed) {
+      setOfferError('Fotos konnten nicht auf unangemessene Inhalte geprüft werden. Bitte später erneut versuchen.')
+      return
+    }
+    if (rejectedNames.length > 0) {
+      setOfferError(`Foto(s) abgelehnt (unangemessener Inhalt): ${rejectedNames.join(', ')}`)
+    }
+    setOfferFiles((files) => [...files, ...safeFiles].slice(0, MAX_OFFER_IMAGES))
   }
 
   function removeOfferFile(index: number) {
@@ -371,10 +400,11 @@ export default function ListingDetailPage() {
                 type="file"
                 accept="image/*"
                 multiple
-                disabled={offerFiles.length >= MAX_OFFER_IMAGES}
+                disabled={checkingImages || offerFiles.length >= MAX_OFFER_IMAGES}
                 onChange={handleFileChange}
                 className="w-full text-sm"
               />
+              {checkingImages && <p className="text-xs text-gray-400 mt-1">Fotos werden geprüft…</p>}
               {offerPreviews.length > 0 && (
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {offerPreviews.map((url, index) => (
@@ -412,7 +442,7 @@ export default function ListingDetailPage() {
             {offerError && <p className="text-red-600 text-sm">{offerError}</p>}
             <button
               type="submit"
-              disabled={offerSubmitting || !offerAcceptedTerms}
+              disabled={offerSubmitting || checkingImages || !offerAcceptedTerms}
               className="bg-brand-600 text-white px-4 py-2 rounded-md font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               {offerSubmitting ? 'Wird gesendet…' : 'Angebot senden'}

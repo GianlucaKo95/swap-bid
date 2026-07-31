@@ -59,6 +59,7 @@ SwapBid hat **kein** Admin-Panel – als Betreiber:in moderierst du direkt über
   insert into public.blocked_emoji (emoji) values ('🍌');
   ```
   Ein Wortfilter erkennt nur offensichtliche/unverschleierte Verstöße – er ist **kein** verlässlicher Schutz gegen gezielte Umgehung.
+- **Bild-Check vor dem Hochladen** (Angebotsfotos): Ein clientseitiges TensorFlow.js-Modell ([nsfwjs](https://github.com/infinitered/nsfwjs), MobileNetV2) klassifiziert jedes Foto im Browser, bevor es hochgeladen wird, und lehnt eindeutig als „Porn“/„Hentai“/„Sexy“ eingestufte Bilder ab. Läuft komplett lokal im Browser (kein Upload zur Prüfung nötig), wird aber erst beim ersten Foto-Upload nachgeladen (~2–3 MB, danach vom Browser gecacht). Da die Prüfung im Client läuft, ist sie – anders als der Stichwortfilter in der Datenbank – theoretisch über direkte API-Aufrufe umgehbar; in Kombination mit der Melde-Funktion trotzdem eine sinnvolle Hürde.
 - **Melde-Funktion**: Jedes Gesuch und Angebot hat einen „🚩 Melden“-Button. Gemeldete Inhalte landen in der Tabelle `reports`. Regelmäßig prüfen, z. B. im SQL Editor:
   ```sql
   select * from reports order by created_at desc;
