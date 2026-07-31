@@ -1,10 +1,17 @@
--- Location on listings (for filtering by "Umgebung") and mutual ratings
--- between the two participants of a completed swap.
+-- Location on listings (for radius search by "Umgebung") and mutual
+-- ratings between the two participants of a completed swap.
 
+-- `location` holds a display label (e.g. "10115 Berlin") resolved client-side
+-- from the postal code the listing owner entered; lat/lng are geocoded from
+-- that same postal code so listings can be filtered by distance.
 alter table public.listings
   add column if not exists location text not null default '';
 
-create index if not exists listings_location_idx on public.listings using gin (to_tsvector('simple', location));
+alter table public.listings
+  add column if not exists lat double precision;
+
+alter table public.listings
+  add column if not exists lng double precision;
 
 -- Ratings ----------------------------------------------------------------
 -- After a listing is matched, the listing owner and the bidder whose offer

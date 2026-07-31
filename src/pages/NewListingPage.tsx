@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../lib/categories'
+import { geocodePostalCode } from '../lib/geocode'
 
 export default function NewListingPage() {
   const { user } = useAuth()
@@ -11,7 +12,7 @@ export default function NewListingPage() {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<string>(CATEGORIES[0].value)
-  const [location, setLocation] = useState('')
+  const [postalCode, setPostalCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -20,6 +21,22 @@ export default function NewListingPage() {
     if (!user) return
     setSubmitting(true)
     setError(null)
+
+    let location = ''
+    let lat: number | null = null
+    let lng: number | null = null
+
+    if (postalCode.trim()) {
+      const geocoded = await geocodePostalCode(postalCode.trim()).catch(() => null)
+      if (!geocoded) {
+        setSubmitting(false)
+        setError('Postleitzahl konnte nicht gefunden werden. Bitte prüfen.')
+        return
+      }
+      location = geocoded.label
+      lat = geocoded.lat
+      lng = geocoded.lng
+    }
 
     const { data, error } = await supabase
       .from('listings')
@@ -30,6 +47,8 @@ export default function NewListingPage() {
         amount: Number(amount),
         category,
         location,
+        lat,
+        lng,
       })
       .select('id')
       .single()
@@ -83,13 +102,19 @@ export default function NewListingPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Umgebung (optional)</label>
+          <label className="block text-sm font-medium mb-1">Postleitzahl (optional)</label>
           <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="z. B. 10115 Berlin"
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]{4,5}"
+            maxLength={5}
+            placeholder="z. B. 10115"
             className="w-full border rounded-md px-3 py-2"
           />
+          <p className="text-xs text-gray-400 mt-1">
+            Wird für die Umkreissuche anderer Nutzer:innen verwendet.
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Beschreibung</label>

@@ -5,7 +5,13 @@ import StatusBadge from './StatusBadge'
 
 type Listing = Database['public']['Tables']['listings']['Row']
 
-export default function ListingCard({ listing }: { listing: Listing }) {
+export default function ListingCard({
+  listing,
+  distanceKm,
+}: {
+  listing: Listing
+  distanceKm?: number
+}) {
   return (
     <Link
       to={`/gesuche/${listing.id}`}
@@ -23,7 +29,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           {categoryLabel(listing.category)}
         </span>
         {listing.location && (
-          <span className="text-xs text-gray-400">📍 {listing.location}</span>
+          <span className="text-xs text-gray-400">
+            📍 {listing.location}
+            {distanceKm != null && ` · ${distanceKm.toLocaleString('de-DE', { maximumFractionDigits: 1 })} km`}
+          </span>
         )}
         <StatusBadge status={listing.status} />
       </div>

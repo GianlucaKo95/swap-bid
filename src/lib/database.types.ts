@@ -31,6 +31,8 @@ export interface Database {
           amount: number
           category: string
           location: string
+          lat: number | null
+          lng: number | null
           status: ListingStatus
           created_at: string
         }
@@ -42,6 +44,8 @@ export interface Database {
           amount: number
           category?: string
           location?: string
+          lat?: number | null
+          lng?: number | null
           status?: ListingStatus
           created_at?: string
         }
@@ -53,6 +57,8 @@ export interface Database {
           amount?: number
           category?: string
           location?: string
+          lat?: number | null
+          lng?: number | null
           status?: ListingStatus
           created_at?: string
         }
