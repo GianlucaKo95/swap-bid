@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { categoryLabel } from '../lib/categories'
+import { MAX_OFFER_IMAGES, MAX_OFFER_IMAGE_SIZE, uploadOfferImages } from '../lib/offerImages'
 import StatusBadge from '../components/StatusBadge'
 
 interface ListingWithOwner {
@@ -23,7 +24,7 @@ interface OfferWithOwner {
   user_id: string
   title: string
   description: string
-  image_url: string | null
+  image_urls: string[]
   status: 'pending' | 'accepted' | 'rejected'
   created_at: string
   profiles: { display_name: string } | null
@@ -39,6 +40,8 @@ export default function ListingDetailPage() {
 
   const [offerTitle, setOfferTitle] = useState('')
   const [offerDescription, setOfferDescription] = useState('')
+  const [offerFiles, setOfferFiles] = useState<File[]>([])
+  const [offerPreviews, setOfferPreviews] = useState<string[]>([])
   const [offerSubmitting, setOfferSubmitting] = useState(false)
   const [offerError, setOfferError] = useState<string | null>(null)
 
@@ -69,17 +72,53 @@ export default function ListingDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  useEffect(() => {
+    const previews = offerFiles.map((file) => URL.createObjectURL(file))
+    setOfferPreviews(previews)
+    return () => previews.forEach((url) => URL.revokeObjectURL(url))
+  }, [offerFiles])
+
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? [])
+    e.target.value = '' // allow re-selecting the same file after removing it
+
+    const oversized = selected.find((file) => file.size > MAX_OFFER_IMAGE_SIZE)
+    if (oversized) {
+      setOfferError(`„${oversized.name}“ ist größer als ${MAX_OFFER_IMAGE_SIZE / 1024 / 1024} MB.`)
+      return
+    }
+
+    setOfferError(null)
+    setOfferFiles((files) => [...files, ...selected].slice(0, MAX_OFFER_IMAGES))
+  }
+
+  function removeOfferFile(index: number) {
+    setOfferFiles((files) => files.filter((_, i) => i !== index))
+  }
+
   async function handleOfferSubmit(e: FormEvent) {
     e.preventDefault()
     if (!user || !id) return
     setOfferSubmitting(true)
     setOfferError(null)
 
+    let imageUrls: string[] = []
+    try {
+      if (offerFiles.length > 0) {
+        imageUrls = await uploadOfferImages(user.id, offerFiles)
+      }
+    } catch (err) {
+      setOfferSubmitting(false)
+      setOfferError(err instanceof Error ? err.message : 'Fotos konnten nicht hochgeladen werden.')
+      return
+    }
+
     const { error } = await supabase.from('offers').insert({
       listing_id: id,
       user_id: user.id,
       title: offerTitle,
       description: offerDescription,
+      image_urls: imageUrls,
     })
 
     setOfferSubmitting(false)
@@ -89,6 +128,7 @@ export default function ListingDetailPage() {
     }
     setOfferTitle('')
     setOfferDescription('')
+    setOfferFiles([])
     await loadData()
   }
 
@@ -155,6 +195,19 @@ export default function ListingDetailPage() {
                 <StatusBadge status={offer.status} />
               </div>
               {offer.description && <p className="text-sm text-gray-600 mt-1">{offer.description}</p>}
+              {offer.image_urls.length > 0 && (
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {offer.image_urls.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer">
+                      <img
+                        src={url}
+                        alt={`Foto zu Angebot „${offer.title}“`}
+                        className="w-20 h-20 object-cover rounded-md border"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-gray-400 mt-2">von {offer.profiles?.display_name ?? 'Unbekannt'}</p>
 
               {isOwner && listing.status === 'open' && offer.status === 'pending' && (
@@ -200,6 +253,36 @@ export default function ListingDetailPage() {
                 rows={3}
                 className="w-full border rounded-md px-3 py-2"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Fotos (optional, max. {MAX_OFFER_IMAGES}, je bis {MAX_OFFER_IMAGE_SIZE / 1024 / 1024} MB)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={offerFiles.length >= MAX_OFFER_IMAGES}
+                onChange={handleFileChange}
+                className="w-full text-sm"
+              />
+              {offerPreviews.length > 0 && (
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {offerPreviews.map((url, index) => (
+                    <div key={url} className="relative">
+                      <img src={url} alt="" className="w-20 h-20 object-cover rounded-md border" />
+                      <button
+                        type="button"
+                        onClick={() => removeOfferFile(index)}
+                        aria-label="Foto entfernen"
+                        className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gray-700 text-white text-xs leading-5"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             {offerError && <p className="text-red-600 text-sm">{offerError}</p>}
             <button

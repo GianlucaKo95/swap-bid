@@ -16,10 +16,15 @@ export default function RegisterPage() {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
-    const { error } = await signUp(email, password, displayName)
+    const { error, session } = await signUp(email, password, displayName)
     setSubmitting(false)
     if (error) {
       setError(error)
+      return
+    }
+    if (session) {
+      // Email confirmation is disabled — already signed in, no need to detour via /login.
+      navigate('/')
       return
     }
     setSuccess(true)

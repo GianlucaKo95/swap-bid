@@ -69,7 +69,7 @@ export interface Database {
           user_id: string
           title: string
           description: string
-          image_url: string | null
+          image_urls: string[]
           status: OfferStatus
           created_at: string
         }
@@ -79,7 +79,7 @@ export interface Database {
           user_id: string
           title: string
           description?: string
-          image_url?: string | null
+          image_urls?: string[]
           status?: OfferStatus
           created_at?: string
         }
@@ -89,7 +89,7 @@ export interface Database {
           user_id?: string
           title?: string
           description?: string
-          image_url?: string | null
+          image_urls?: string[]
           status?: OfferStatus
           created_at?: string
         }
