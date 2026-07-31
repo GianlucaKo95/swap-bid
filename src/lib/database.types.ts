@@ -1,5 +1,6 @@
 export type ListingStatus = 'open' | 'matched' | 'closed'
 export type OfferStatus = 'pending' | 'accepted' | 'rejected'
+export type ReportTargetType = 'listing' | 'offer'
 
 export interface Database {
   public: {
@@ -30,6 +31,9 @@ export interface Database {
           description: string
           amount: number
           category: string
+          location: string
+          lat: number | null
+          lng: number | null
           status: ListingStatus
           created_at: string
         }
@@ -40,6 +44,9 @@ export interface Database {
           description?: string
           amount: number
           category?: string
+          location?: string
+          lat?: number | null
+          lng?: number | null
           status?: ListingStatus
           created_at?: string
         }
@@ -50,6 +57,9 @@ export interface Database {
           description?: string
           amount?: number
           category?: string
+          location?: string
+          lat?: number | null
+          lng?: number | null
           status?: ListingStatus
           created_at?: string
         }
@@ -108,8 +118,103 @@ export interface Database {
           },
         ]
       }
+      ratings: {
+        Row: {
+          id: string
+          listing_id: string
+          rater_id: string
+          ratee_id: string
+          stars: number
+          comment: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          rater_id: string
+          ratee_id: string
+          stars: number
+          comment?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          listing_id?: string
+          rater_id?: string
+          ratee_id?: string
+          stars?: number
+          comment?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ratings_listing_id_fkey'
+            columns: ['listing_id']
+            referencedRelation: 'listings'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'ratings_rater_id_fkey'
+            columns: ['rater_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'ratings_ratee_id_fkey'
+            columns: ['ratee_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          target_type: ReportTargetType
+          target_id: string
+          reason: string
+          comment: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reporter_id: string
+          target_type: ReportTargetType
+          target_id: string
+          reason: string
+          comment?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          target_type?: ReportTargetType
+          target_id?: string
+          reason?: string
+          comment?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'reports_reporter_id_fkey'
+            columns: ['reporter_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
-    Views: Record<string, never>
+    Views: {
+      user_rating_summary: {
+        Row: {
+          user_id: string
+          avg_stars: number
+          rating_count: number
+        }
+        Relationships: []
+      }
+    }
     Functions: Record<string, never>
   }
 }

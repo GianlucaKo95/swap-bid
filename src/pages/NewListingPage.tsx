@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../lib/categories'
+import { geocodePostalCode } from '../lib/geocode'
 
 export default function NewListingPage() {
   const { user } = useAuth()
@@ -11,6 +12,8 @@ export default function NewListingPage() {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<string>(CATEGORIES[0].value)
+  const [postalCode, setPostalCode] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -20,6 +23,22 @@ export default function NewListingPage() {
     setSubmitting(true)
     setError(null)
 
+    let location = ''
+    let lat: number | null = null
+    let lng: number | null = null
+
+    if (postalCode.trim()) {
+      const geocoded = await geocodePostalCode(postalCode.trim()).catch(() => null)
+      if (!geocoded) {
+        setSubmitting(false)
+        setError('Postleitzahl konnte nicht gefunden werden. Bitte prüfen.')
+        return
+      }
+      location = geocoded.label
+      lat = geocoded.lat
+      lng = geocoded.lng
+    }
+
     const { data, error } = await supabase
       .from('listings')
       .insert({
@@ -28,6 +47,9 @@ export default function NewListingPage() {
         description,
         amount: Number(amount),
         category,
+        location,
+        lat,
+        lng,
       })
       .select('id')
       .single()
@@ -81,6 +103,21 @@ export default function NewListingPage() {
           </select>
         </div>
         <div>
+          <label className="block text-sm font-medium mb-1">Postleitzahl (optional)</label>
+          <input
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]{4,5}"
+            maxLength={5}
+            placeholder="z. B. 10115"
+            className="w-full border rounded-md px-3 py-2"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Wird für die Umkreissuche anderer Nutzer:innen verwendet.
+          </p>
+        </div>
+        <div>
           <label className="block text-sm font-medium mb-1">Beschreibung</label>
           <textarea
             value={description}
@@ -90,10 +127,26 @@ export default function NewListingPage() {
             className="w-full border rounded-md px-3 py-2"
           />
         </div>
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input
+            required
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            Ich bestätige, dass mein Gesuch keine verbotenen Inhalte enthält (siehe{' '}
+            <Link to="/nutzungsbedingungen" target="_blank" className="text-brand-700 hover:underline">
+              Nutzungsbedingungen
+            </Link>
+            ).
+          </span>
+        </label>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !acceptedTerms}
           className="bg-brand-600 text-white px-4 py-2 rounded-md font-medium hover:bg-brand-700 disabled:opacity-50"
         >
           {submitting ? 'Wird veröffentlicht…' : 'Gesuch veröffentlichen'}

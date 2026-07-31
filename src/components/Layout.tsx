@@ -70,6 +70,10 @@ export default function Layout() {
       </main>
       <footer className="border-t py-6 text-center text-sm text-gray-400">
         SwapBid – der umgekehrte Kleinanzeigenmarkt: Geld posten, Objekte dafür bieten.
+        <br />
+        <Link to="/nutzungsbedingungen" className="hover:underline">
+          Nutzungsbedingungen
+        </Link>
       </footer>
     </div>
   )
