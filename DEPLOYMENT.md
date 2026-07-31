@@ -56,11 +56,50 @@ Port `3045` kann im Tab **Netzwerk** des Add-ons bei Bedarf auf einen anderen Ho
 
 1. **DDNS einrichten**: z. B. das offizielle *DuckDNS*-Add-on in Home Assistant, oder einen DDNS-Client auf deinem Router, der eure öffentliche IP unter eurer Wunsch-Domain (`deinname.duckdns.org` o. ä.) aktuell hält.
 2. **Portweiterleitung** im Router: externen Port (z. B. 3045, oder frei wählbar) auf die interne IP des HA-Hosts und Port 3045 (bzw. den im Add-on gewählten Port) weiterleiten.
-3. **HTTPS nicht vergessen**: SwapBid selbst spricht nur HTTP. Zugangsdaten (Login) unverschlüsselt über das offene Internet zu schicken ist unsicher. Setze einen Reverse Proxy mit TLS davor, z. B.:
-   - Das offizielle **Let's Encrypt**-Add-on plus eigener nginx-Konfiguration, oder
-   - Community Add-ons wie **NGINX Proxy Manager** / **Caddy**, die euer DDNS-Zertifikat automatisch verwalten und dann intern auf `swap-bid:3045` weiterleiten.
-   Nur den TLS-Port (443) extern freigeben, den SwapBid-Port selbst nicht direkt exponieren.
+3. **HTTPS nicht vergessen**: SwapBid selbst spricht nur HTTP. Zugangsdaten (Login) unverschlüsselt über das offene Internet zu schicken ist unsicher. Setze einen Reverse Proxy mit TLS davor, z. B. **NGINX Proxy Manager** (siehe Schritt 5 unten) oder das offizielle **Let's Encrypt**-Add-on mit eigener nginx-Konfiguration. Nur den TLS-Port (443) extern freigeben, den SwapBid-Port selbst nicht direkt exponieren.
 4. Danach ist die App unter `https://deinname.duckdns.org` (oder eurer eigenen Domain) erreichbar.
+
+## 5. NGINX Proxy Manager vor SwapBid einrichten
+
+NGINX Proxy Manager (NPM) übernimmt TLS-Terminierung + Let's-Encrypt-Zertifikate über eine Web-Oberfläche – keine nginx-Konfigurationsdatei nötig. NPM ist kein offizielles HA-Add-on, läuft aber problemlos als eigener Docker-Container auf demselben Host wie SwapBid.
+
+**1. NPM starten** (eigene `docker-compose.yml`, z. B. `~/npm/docker-compose.yml`):
+
+```yaml
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"     # HTTP + Let's-Encrypt-Validierung
+      - "443:443"   # HTTPS
+      - "81:81"     # Admin-Oberfläche
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+```
+
+```bash
+docker compose up -d
+```
+
+**2. Admin-Oberfläche öffnen**: `http://<host>:81` — Erstlogin `admin@example.com` / `changeme`, danach sofort E-Mail und Passwort ändern.
+
+**3. Proxy Host anlegen**: **Hosts → Proxy Hosts → Add Proxy Host**
+
+| Feld | Wert |
+|---|---|
+| Domain Names | `deinname.duckdns.org` |
+| Scheme | `http` |
+| Forward Hostname / IP | interne IP des SwapBid-Hosts (z. B. `192.168.x.x`); läuft NPM im selben Docker-Netzwerk wie `swap-bid`, reicht auch der Containername `swap-bid` |
+| Forward Port | `3045` |
+| Websockets Support | an |
+
+Tab **SSL**: **Request a new SSL Certificate** (Let's Encrypt) → **Force SSL** + **HTTP/2 Support** aktivieren → E-Mail eintragen, AGB akzeptieren → **Save**.
+
+**4. FRITZ!Box-Freigabe anpassen**: Jetzt nur noch **Port 80 und 443 (TCP)** auf den NPM-Host weiterleiten (80 wird für die Let's-Encrypt-Zertifikatsprüfung und -erneuerung gebraucht). Die bisherige Freigabe auf Port 3045 kann entfernt werden — der Port bleibt intern, SwapBid ist nur noch über NPM erreichbar.
+
+**5. Testen**: `https://deinname.duckdns.org` sollte SwapBid mit gültigem Zertifikat anzeigen (Schloss-Symbol im Browser, keine Warnung).
 
 ## Supabase-Setup
 
